@@ -16,6 +16,7 @@ import flixel.input.keyboard.FlxKey;
 import flixel.sound.FlxSound;
 import flixel.math.FlxPoint;
 import funkin.editors.charter.CharterBackdropGroup.CharterBackdropDummy;
+import funkin.editors.charter.CharterBackdropGroup.CharterGridSeperatorBase;
 import funkin.backend.system.Conductor;
 import funkin.backend.chart.*;
 import funkin.backend.chart.ChartData;
@@ -621,6 +622,8 @@ class Charter extends UIState {
 
 		gridBackdrops.bottomLimitY = __endStep * 40;
 		eventsBackdrop.bottomSeparator.y = gridBackdrops.bottomLimitY-2;
+
+		CharterGridSeperatorBase.lastConductorSprY = Math.NEGATIVE_INFINITY;
 
 		updateWaveforms();
 	}
@@ -1631,11 +1634,9 @@ class Charter extends UIState {
 	}
 	function _view_showeventSecSeparator(t) {
 		t.icon = (Options.charterShowSections = !Options.charterShowSections) ? 1 : 0;
-		eventsBackdrop.eventSecSeparator.visible = gridBackdrops.sectionsVisible = Options.charterShowSections;
 	}
 	function _view_showeventBeatSeparator(t) {
 		t.icon = (Options.charterShowBeats = !Options.charterShowBeats) ? 1 : 0;
-		eventsBackdrop.eventBeatSeparator.visible = gridBackdrops.beatsVisible = Options.charterShowBeats;
 	}
 	function _view_switchWaveformDetail(t) {
 		t.icon = (Options.charterLowDetailWaveforms = !Options.charterLowDetailWaveforms) ? 1 : 0;
@@ -1837,8 +1838,8 @@ class Charter extends UIState {
 	public function updateBPMEvents() {
 		buildEvents();
 
-		Conductor.mapBPMChanges(PlayState.SONG);
 		Conductor.changeBPM(PlayState.SONG.meta.bpm, cast PlayState.SONG.meta.beatsPerMeasure.getDefault(4), cast PlayState.SONG.meta.stepsPerBeat.getDefault(4));
+		Conductor.mapBPMChanges(PlayState.SONG);
 
 		refreshBPMSensitive();
 	}
