@@ -378,6 +378,27 @@ class DisplayObjectRenderer extends EventDispatcher
 				offsetX = rect.x > 0 ? Math.ceil(rect.x) : Math.floor(rect.x);
 				offsetY = rect.y > 0 ? Math.ceil(rect.y) : Math.floor(rect.y);
 
+				/*if (displayObject.__cacheBitmapData != null)
+				{
+					if (filterWidth > displayObject.__cacheBitmapData.width || filterHeight > displayObject.__cacheBitmapData.height)
+					{
+						bitmapWidth = Math.ceil(Math.max(filterWidth * 1.25, displayObject.__cacheBitmapData.width));
+						bitmapHeight = Math.ceil(Math.max(filterHeight * 1.25, displayObject.__cacheBitmapData.height));
+						needRender = true;
+					}
+					else
+					{
+						bitmapWidth = displayObject.__cacheBitmapData.width;
+						bitmapHeight = displayObject.__cacheBitmapData.height;
+					}
+				}
+				else
+				{
+					bitmapWidth = filterWidth;
+					bitmapHeight = filterHeight;
+				}*/
+				needRender = needRender || displayObject.__cacheBitmapData == null ||
+					displayObject.__cacheBitmapData.width != filterWidth || displayObject.__cacheBitmapData.height != filterHeight;
 				bitmapWidth = filterWidth;
 				bitmapHeight = filterHeight;
 			}

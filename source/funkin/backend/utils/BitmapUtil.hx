@@ -174,6 +174,8 @@ class BitmapUtil {
 	 * @param bmap BitmapData
 	 */
 	public static function toHardware(bmap:BitmapData):Void {
+		if (Main.forceGPUOnlyBitmapsOff) return;
+
 		final context = FlxG.stage.context3D;
 		if (context == null || bmap.image == null) return;
 

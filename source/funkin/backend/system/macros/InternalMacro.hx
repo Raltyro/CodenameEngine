@@ -28,7 +28,7 @@ class InternalMacro {
 		for (f in fields) if (f.name == 'loadData') switch (f.kind) {
 			case FFun(func): switch (func.expr.expr) {
 				case EBlock(exprs):
-					exprs.insert(0, macro if ($i{"localThreadPool"} != null) $i{"localThreadPool"}.maxThreads = 2);
+					exprs.insert(0, macro if (localThreadPool != null) localThreadPool.maxThreads = 2);
 				default:
 			}
 			default:
@@ -42,7 +42,7 @@ class InternalMacro {
 		for (f in fields) if (f.name == 'createImagePattern') switch (f.kind) {
 			case FFun(func): switch (func.expr.expr) {
 				case EBlock(exprs):
-					exprs.insert(0, macro if ($p{["bitmapFill", "__surface"]} == null) return null);
+					exprs.insert(0, macro if (bitmapFill.__surface == null) return null);
 				default:
 			}
 			default:
@@ -56,7 +56,7 @@ class InternalMacro {
 		for (f in fields) if (f.name == 'getSurface') switch (f.kind) {
 			case FFun(func): switch (func.expr.expr) {
 				case EBlock(exprs):
-					exprs.insert(0, macro if ($i{"__surface"} != null) return $i{"__surface"});
+					exprs.insert(0, macro if (__surface != null) return __surface);
 				default:
 			}
 			default:
@@ -70,37 +70,37 @@ class InternalMacro {
 		final fields:Array<Field> = Context.getBuildFields();
 		for (f in fields) if (f.name == '__getMatrix') switch (f.kind) {
 			case FFun(func): func.expr = macro {
-				$i{"__matrix"}[0] = $i{"transform"}.a * $i{"__worldTransform"}.a + $i{"transform"}.b * $i{"__worldTransform"}.c;
-				$i{"__matrix"}[1] = $i{"transform"}.a * $i{"__worldTransform"}.b + $i{"transform"}.b * $i{"__worldTransform"}.d;
-				$i{"__matrix"}[2] = 0;
-				$i{"__matrix"}[3] = 0;
-				$i{"__matrix"}[4] = $i{"transform"}.c * $i{"__worldTransform"}.a + $i{"transform"}.d * $i{"__worldTransform"}.c;
-				$i{"__matrix"}[5] = $i{"transform"}.c * $i{"__worldTransform"}.b + $i{"transform"}.d * $i{"__worldTransform"}.d;
-				$i{"__matrix"}[6] = 0;
-				$i{"__matrix"}[7] = 0;
-				$i{"__matrix"}[8] = 0;
-				$i{"__matrix"}[9] = 0;
-				$i{"__matrix"}[10] = 1;
-				$i{"__matrix"}[11] = 0;
-				$i{"__matrix"}[12] = $i{"transform"}.tx * $i{"__worldTransform"}.a + $i{"transform"}.ty * $i{"__worldTransform"}.c + $i{"__worldTransform"}.tx;
-				$i{"__matrix"}[13] = $i{"transform"}.tx * $i{"__worldTransform"}.b + $i{"transform"}.ty * $i{"__worldTransform"}.d + $i{"__worldTransform"}.ty;
-				$i{"__matrix"}[14] = 0;
-				$i{"__matrix"}[15] = 1;
+				__matrix[0] = transform.a * __worldTransform.a + transform.b * __worldTransform.c;
+				__matrix[1] = transform.a * __worldTransform.b + transform.b * __worldTransform.d;
+				__matrix[2] = 0;
+				__matrix[3] = 0;
+				__matrix[4] = transform.c * __worldTransform.a + transform.d * __worldTransform.c;
+				__matrix[5] = transform.c * __worldTransform.b + transform.d * __worldTransform.d;
+				__matrix[6] = 0;
+				__matrix[7] = 0;
+				__matrix[8] = 0;
+				__matrix[9] = 0;
+				__matrix[10] = 1;
+				__matrix[11] = 0;
+				__matrix[12] = transform.tx * __worldTransform.a + transform.ty * __worldTransform.c + __worldTransform.tx;
+				__matrix[13] = transform.tx * __worldTransform.b + transform.ty * __worldTransform.d + __worldTransform.ty;
+				__matrix[14] = 0;
+				__matrix[15] = 1;
 
-				if ($i{"pixelSnapping"} == openfl.display.PixelSnapping.ALWAYS ||
-					($i{"pixelSnapping"} == openfl.display.PixelSnapping.AUTO
-						&& $i{"__matrix"}[1] == 0 && $i{"__matrix"}[4] == 0
-						&& $i{"__matrix"}[0] < 1.0000001 && $i{"__matrix"}[0] > 0.9999999
-					)	&& $i{"__matrix"}[5] < 1.0000001 && $i{"__matrix"}[5] > 0.9999999
+				if (pixelSnapping == openfl.display.PixelSnapping.ALWAYS ||
+					(pixelSnapping == openfl.display.PixelSnapping.AUTO
+						&& __matrix[1] == 0 && __matrix[4] == 0
+						&& __matrix[0] < 1.0000001 && __matrix[0] > 0.9999999
+					)	&& __matrix[5] < 1.0000001 && __matrix[5] > 0.9999999
 				) {
-					$i{"__matrix"}[12] = Math.round($i{"__matrix"}[12]);
-					$i{"__matrix"}[13] = Math.round($i{"__matrix"}[13]);
+					__matrix[12] = Math.round(__matrix[12]);
+					__matrix[13] = Math.round(__matrix[13]);
 				}
 
-				$i{"__matrix"}.append($i{"__flipped"} ? $i{"__projectionFlipped"} : $i{"__projection"});
+				__matrix.append(__flipped ? __projectionFlipped : __projection);
 
-				for (i in 0...16) $i{"__values"}[i] = $i{"__matrix"}[i];
-				return $i{"__values"};
+				for (i in 0...16) __values[i] = __matrix[i];
+				return __values;
 			}
 			default:
 		}
