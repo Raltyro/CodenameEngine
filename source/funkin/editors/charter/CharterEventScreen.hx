@@ -58,7 +58,7 @@ class CharterEventScreen extends UISubstateWindow {
 			});
 			eventsList.add(new EventButton(events[events.length-1], CharterEvent.generateEventIcon(events[events.length-1]), events.length-1, this, eventsList));
 			changeTab(events.length-1);
-		}));
+		}, chartEvent.step));
 		for (k=>i in events)
 			eventsList.add(new EventButton(i, CharterEvent.generateEventIcon(i), k, this, eventsList));
 		add(eventsList);
@@ -83,12 +83,12 @@ class CharterEventScreen extends UISubstateWindow {
 				else {
 					chartEvent.events = [for (i in eventsList.buttons.members) i.event];
 					chartEvent.refreshEventIcons();
-					Charter.instance.updateBPMEvents();
 
 					Charter.undos.addToUndo(CEditEvent(chartEvent, oldEvents, [for (event in events) Reflect.copy(event)]));
 				}
 			}
 
+			Charter.instance.updateBPMEvents();
 			close();
 		});
 		saveButton.x -= saveButton.bWidth;

@@ -843,6 +843,7 @@ class Charter extends UIState {
 						if (s is CharterNote) cast(s, CharterNote).snappedToStrumline = true;
 						if (s is UISprite) cast(s, UISprite).cursor = BUTTON;
 					}
+					checkSelectionForBPMUpdates();
 					if (!(verticalChange == 0 && horizontalChange == 0)) {
 						notesGroup.sortNotes(); eventsGroup.sortEvents();
 						undos.addToUndo(CSelectionDrag(undoDrags));
@@ -1031,11 +1032,7 @@ class Charter extends UIState {
 		notesGroup.sortNotes();
 		notesGroup.autoSort = true;
 
-		for (s in selection)
-			if (s is CharterEvent) {
-				Charter.instance.updateBPMEvents();
-				break;
-			}
+		checkSelectionForBPMUpdates();
 
 		if (addToUndo)
 			undos.addToUndo(CCreateSelection(selection));
@@ -1059,11 +1056,7 @@ class Charter extends UIState {
 		notesGroup.sortNotes();
 		notesGroup.autoSort = true;
 
-		for (s in selection)
-			if (s is CharterEvent) {
-				Charter.instance.updateBPMEvents();
-				break;
-			}
+		checkSelectionForBPMUpdates();
 
 		if (addToUndo)
 			undos.addToUndo(CDeleteSelection(selection));
@@ -1432,6 +1425,8 @@ class Charter extends UIState {
 		selection = sObjects;
 		_edit_copy(_); // to fix stupid bugs
 
+		checkSelectionForBPMUpdates();
+
 		undos.addToUndo(CCreateSelection(sObjects.copy()));
 	}
 
@@ -1477,6 +1472,7 @@ class Charter extends UIState {
 					if (s.selectable.draggable) s.selectable.handleDrag(s.change * -1);
 
 				selection = [for (s in selectionDrags) s.selectable];
+				Charter.instance.updateBPMEvents();
 			case CEditSustains(changes):
 				for(n in changes)
 					n.note.updatePos(n.note.step, n.note.id, n.before, n.note.type);
@@ -1522,6 +1518,7 @@ class Charter extends UIState {
 				for (s in selectionDrags)
 					if (s.selectable.draggable) s.selectable.handleDrag(s.change);
 				//this.selection = selection;
+				Charter.instance.updateBPMEvents();
 			case CEditSustains(changes):
 				for(n in changes)
 					n.note.updatePos(n.note.step, n.note.id, n.after, n.note.type);
@@ -1836,12 +1833,28 @@ class Charter extends UIState {
 	}
 
 	public function updateBPMEvents() {
+		eventsGroup.sortEvents();
+		Conductor.mapCharterBPMChanges(PlayState.SONG);
 		buildEvents();
 
-		Conductor.changeBPM(PlayState.SONG.meta.bpm, cast PlayState.SONG.meta.beatsPerMeasure.getDefault(4), cast PlayState.SONG.meta.stepsPerBeat.getDefault(4));
-		Conductor.mapBPMChanges(PlayState.SONG);
-
+		for(e in eventsGroup.members) {
+			for(event in e.events) {
+				if (event.name == "BPM Change" || event.name == "Time Signature Change" || event.name == "Continuous BPM Change") {
+					e.refreshEventIcons();
+					break;
+				}
+			}
+		}
+		
 		refreshBPMSensitive();
+	}
+
+	public inline function checkSelectionForBPMUpdates() {
+		for (s in selection)
+			if (s is CharterEvent) {
+				Charter.instance.updateBPMEvents();
+				break;
+			}
 	}
 
 	public inline function hitsoundsEnabled(id:Int)

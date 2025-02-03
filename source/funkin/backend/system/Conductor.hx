@@ -4,6 +4,7 @@ import flixel.FlxState;
 import flixel.util.FlxSignal.FlxTypedSignal;
 import funkin.backend.chart.ChartData;
 import funkin.backend.system.interfaces.IBeatReceiver;
+import funkin.editors.charter.Charter;
 
 @:structInit
 class BPMChangeEvent
@@ -14,6 +15,7 @@ class BPMChangeEvent
 	public var stepsPerBeat:Int = 4;
 
 	public var endSongTime:Float = 0;
+	public var endStepTime:Float = 0;
 	public var continuous:Bool = false;
 
 	public var stepTime:Float;
@@ -139,6 +141,11 @@ final class Conductor
 	 */
 	public static var bpmChangeMap:Array<BPMChangeEvent>;
 
+	/**
+	 * Array of all events that have been rejected by the Conductor.
+	 */
+	public static var invalidEvents:Array<ChartEvent> = [];
+
 	@:dox(hide) public function new() {}
 
 	public static function reset() {
@@ -154,13 +161,9 @@ final class Conductor
 		mapBPMChanges(SONG);
 	}
 
-	private static function mapBPMChange(curChange:BPMChangeEvent, time:Float, bpm:Float, ?endTime:Float, ?prevChange:BPMChangeEvent):BPMChangeEvent {
+	private static function mapBPMChange(curChange:BPMChangeEvent, time:Float, bpm:Float):BPMChangeEvent {
 		var beatTime:Float, measureTime:Float, stepTime:Float;
-		if (curChange.continuous)
-			stepTime = curChange.stepTime + (((curChange.endSongTime - curChange.songTime) * (curChange.bpm - prevChange.bpm))
-				/ Math.log(curChange.bpm / prevChange.bpm) + (time - curChange.endSongTime) * curChange.bpm) / 15000;
-		else
-			stepTime = curChange.stepTime + (time - curChange.songTime) / (15000 / curChange.bpm);
+		stepTime = (curChange.continuous ? curChange.endStepTime : curChange.stepTime) + (time - (curChange.continuous ? curChange.endSongTime : curChange.songTime)) / (15000 / curChange.bpm);
 
 		beatTime = curChange.beatTime + (stepTime - curChange.stepTime) / curChange.stepsPerBeat;
 		measureTime = curChange.measureTime + (beatTime - curChange.beatTime) / curChange.beatsPerMeasure;
@@ -174,7 +177,6 @@ final class Conductor
 			beatsPerMeasure: curChange.beatsPerMeasure,
 			stepsPerBeat: curChange.stepsPerBeat
 		});
-		if (curChange.continuous = (endTime is Float && endTime != 0)) curChange.endSongTime = endTime;
 		return curChange;
 	}
 
@@ -194,32 +196,97 @@ final class Conductor
 		};
 		curChangeIndex = 0;
 		bpmChangeMap = [curChange];
+		invalidEvents = [];
 		if (song.events == null) return;
 
 		// fix the sort first...
 		var events:Array<ChartEvent> = [];
-		for (e in song.events) if (e.params != null && (e.name == "BPM Change" || e.name == "Time Signature Change")) events.push(e);
-		events.sort(function(a, b) return Std.int(a.time - b.time));
+		for (e in song.events) if (e.params != null && (e.name == "BPM Change" || e.name == "Time Signature Change" || e.name == "Continuous BPM Change")) events.push(e);
+		events.sort(function(a, b) {
+			if (a.time == b.time) {
+				if (a.name == "Continuous BPM Change") return 1;
+				if (b.name == "Continuous BPM Change") return -1;
+			}
+			return Std.int(a.time - b.time);
+		});
 
-		var prevChange:BPMChangeEvent = null;
 		for (e in events) {
-			if (bpmChangeMap.length > 3) prevChange = bpmChangeMap[bpmChangeMap.length - 2];
-			var name = e.name, params = e.params, time = e.time;
-			if (name == "BPM Change" && params[0] is Float && curChange.bpm != params[0])
-				curChange = mapBPMChange(curChange, time, params[0], params[1], prevChange);
-			else if (name == "Time Signature Change") {
-				//if (beatsPerMeasure == curChange.beatsPerMeasure && stepsPerBeat == curChange.stepsPerBeat) continue;
-				/* TODO: make so time sigs doesnt stop the bpm change if its in the duration of bpm change */
+			curChange = mapEvent(e, curChange);
+		}
+	}
 
-				if (curChange.songTime != time) curChange = mapBPMChange(curChange, time, curChange.bpm, null, prevChange);
-				curChange.beatsPerMeasure = params[0];
-				curChange.stepsPerBeat = params[1];
+	private static function mapEvent(e:ChartEvent, curChange:BPMChangeEvent) {
+		var name = e.name, params = e.params, time = e.time;
+		if (curChange.continuous && time < curChange.endSongTime) { //ensure that you cannot place any conductor events during a continuous change
+			invalidEvents.push(e);
+			Logs.trace('Invalid Conductor event "${e.name}" at ${e.time} (Intersecting continuous change!)', WARNING);
+			return curChange;
+		}
+
+		if (name == "BPM Change" && params[0] is Float && curChange.bpm != params[0])
+			curChange = mapBPMChange(curChange, time, params[0]);
+		else if (name == "Time Signature Change") {
+			//if (beatsPerMeasure == curChange.beatsPerMeasure && stepsPerBeat == curChange.stepsPerBeat) continue;
+			/* TODO: make so time sigs doesnt stop the bpm change if its in the duration of bpm change */
+
+			if (curChange.songTime != time) curChange = mapBPMChange(curChange, time, curChange.bpm);
+			curChange.beatsPerMeasure = params[0];
+			curChange.stepsPerBeat = params[1];
+			
+			curChange.stepTime = CoolUtil.floorInt(curChange.stepTime + .99998);
+			curChange.beatTime = CoolUtil.floorInt(curChange.beatTime + .99998);
+			curChange.measureTime = CoolUtil.floorInt(curChange.measureTime + .99998);
+		} else if (name == "Continuous BPM Change") {
+			
+			var prevBPM = curChange.bpm;
+			if (curChange.bpm == params[0]) {
+				invalidEvents.push(e);
+				return curChange; //DO NOT!!!!
+			}
+			curChange = mapBPMChange(curChange, time, params[0]);
+			var endTime = time + (params[1]) / (curChange.bpm - prevBPM) * Math.log(curChange.bpm / prevBPM) * 15000;
+			curChange.endStepTime = curChange.stepTime + params[1];
+			curChange.continuous = true;
+			curChange.endSongTime = endTime;	
+		}
+		return curChange;
+	}
+
+	public static function mapCharterBPMChanges(song:ChartData) {
+		var curChange:BPMChangeEvent = {
+			songTime: 0,
+			stepTime: 0,
+			beatTime: 0,
+			measureTime: 0,
+			bpm: song.meta.bpm,
+			beatsPerMeasure: song.meta.beatsPerMeasure.getDefault(4),
+			stepsPerBeat: CoolUtil.floorInt(song.meta.stepsPerBeat.getDefault(4))
+		};
+		curChangeIndex = 0;
+		bpmChangeMap = [curChange];
+		invalidEvents = [];
+
+		for(event in Charter.instance.eventsGroup.members) {
+			event.events.sort(function(a, b) {
+				if (a.time == b.time) {
+					if (a.name == "Continuous BPM Change") return 1;
+					if (b.name == "Continuous BPM Change") return -1;
+				}
+				return 0;
+			});
+
+			var eventTime = Conductor.getTimeForStep(event.step);
+			for (e in event.events) {
+				e.time = eventTime;
 				
-				curChange.stepTime = CoolUtil.floorInt(curChange.stepTime + .99998);
-				curChange.beatTime = CoolUtil.floorInt(curChange.beatTime + .99998);
-				curChange.measureTime = CoolUtil.floorInt(curChange.measureTime + .99998);
+				if ((e.name == "BPM Change" || e.name == "Time Signature Change" || e.name == "Continuous BPM Change")) {
+					curChange = mapEvent(e, curChange);
+				}
+
 			}
 		}
+
+		
 	}
 
 	private static var elapsed:Float;

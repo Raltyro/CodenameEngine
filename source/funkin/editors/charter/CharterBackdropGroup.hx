@@ -294,10 +294,10 @@ class CharterGridSeperatorBase extends FlxSprite {
 		for (i => change in Conductor.bpmChangeMap) {
 			if (change.stepTime >= minStep && change.stepTime <= maxStep) {
 				//get step while ignoring the current change
-				var index = CoolUtil.boundInt(i-1, 0, Conductor.bpmChangeMap.length - 1);
-				var step = Conductor.getTimeWithBPMInSteps(change.songTime, index, Conductor.getTimeWithIndexInBPM(change.songTime, index));
+				var index:Int = CoolUtil.boundInt(i-1, 0, Conductor.bpmChangeMap.length - 1);
+				var step:Float = Conductor.getTimeWithBPMInSteps(change.songTime, index, Conductor.getTimeWithIndexInBPM(change.songTime, index));
 
-				if (Math.ceil(step) - step > 0) { //mid step change
+				if (Math.ceil(step) - step > 0 && (step - Math.floor(step)) > FlxMath.EPSILON) { //mid step change
 					timeSignatureChangeGaps.push(step);
 				}
 			}

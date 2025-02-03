@@ -1,5 +1,7 @@
 package funkin.editors.charter;
 
+import funkin.backend.shaders.CustomShader;
+import funkin.backend.system.Conductor;
 import flixel.group.FlxSpriteGroup;
 import flixel.math.FlxPoint;
 import flixel.system.FlxAssets.FlxGraphicAsset;
@@ -87,6 +89,9 @@ class CharterEvent extends UISliceSprite implements ICharterSelectable {
 			script.set("getIconFromStrumline", getIconFromStrumline);
 			script.set("getIconFromCharName", getIconFromCharName);
 			script.set("generateDefaultIcon", generateDefaultIcon);
+			script.set("generateEventIconDurationArrow", generateEventIconDurationArrow);
+			script.set("generateEventIconNumbers", generateEventIconNumbers);
+			script.set("generateEventIconWarning", generateEventIconWarning);
 			script.set("getPackData", getPackData);
 			script.set("getEventComponent", getEventComponent);
 			// data
@@ -176,9 +181,10 @@ class CharterEvent extends UISliceSprite implements ICharterSelectable {
 		return healthIcon;
 	}
 
-	public static function generateEventIcon(event:ChartEvent):FlxSprite {
+	public static function generateEventIcon(event:ChartEvent, inMenu:Bool = true):FlxSprite {
 		var script = getUIScript(event, "event-icon");
 		if(script != null && !(script is DummyScript)) {
+			script.set("inMenu", inMenu);
 			if(script.get("generateIcon") != null) {
 				var res:FlxSprite = script.call("generateIcon");
 				if(res != null)
@@ -201,8 +207,45 @@ class CharterEvent extends UISliceSprite implements ICharterSelectable {
 						num.active = false;
 						num;
 					});
+					if (Conductor.invalidEvents.contains(event)) generateEventIconWarning(group);
 					return group;
 				}
+			case "Continuous BPM Change":
+				if(event.params != null && event.params[1] != null) {
+					var group = new EventIconGroup();
+					group.add(generateDefaultIcon("BPM Change Start"));
+					if (!inMenu) {
+						generateEventIconDurationArrow(group, event.params[1]);
+						group.members[0].y -= 2;
+						generateEventIconNumbers(group, event.params[0], 3);
+					}
+					if (Conductor.invalidEvents.contains(event)) generateEventIconWarning(group);
+					return group;
+				} else {
+					return generateDefaultIcon("BPM Change Start");
+				}
+			case "BPM Change":
+				if(event.params != null && event.params[0] != null) {
+					var group = new EventIconGroup();
+					group.add(generateDefaultIcon(event.name));
+					if (!inMenu) {
+						group.members[0].y -= 2;
+						generateEventIconNumbers(group, event.params[0], 3);
+					}
+					if (Conductor.invalidEvents.contains(event)) generateEventIconWarning(group);
+					return group;
+				}
+
+			case "Scroll Speed Change":
+				if(event.params != null && !inMenu) {
+					var group = new EventIconGroup();
+					group.add(generateDefaultIcon(event.name));
+					if (event.params[0]) generateEventIconDurationArrow(group, event.params[2]);
+					group.members[0].y -= 2;
+					generateEventIconNumbers(group, event.params[1]);
+					return group;
+				}
+
 			case "Camera Movement":
 				// camera movement, use health icon
 				if(event.params != null) {
@@ -211,6 +254,63 @@ class CharterEvent extends UISliceSprite implements ICharterSelectable {
 				}
 		}
 		return generateDefaultIcon(event.name);
+	}
+
+	private static function generateEventIconNumbers(group:EventIconGroup, number:Float, x:Float = 4, y:Float = 15, spacing:Float = 5, precision:Int = 3) {
+		group.add({
+			var num = new EventNumber(x, y, number, EventNumber.ALIGN_CENTER, spacing, precision);
+			if (num.numWidth > 20) {
+				num.scale.x = num.scale.y = 20 / num.numWidth;
+			}
+			num.active = false;
+			num;
+		});
+	}
+
+	private static function generateEventIconDurationArrow(group:EventIconGroup, stepDuration:Float) {
+		//var group = new EventIconGroup();
+		//group.add(generateDefaultIcon(startIcon));
+
+		var xOffset = 4;
+		var yGap = 24;
+		var endGap = 2;
+
+		if (stepDuration >= 0.55) { //min time for showing arrow
+			var tail = new FlxSprite(xOffset, yGap);
+			var arrow = new FlxSprite(xOffset, (stepDuration * 40) + endGap);
+			var arrowSegment = new FlxSprite(xOffset, yGap);
+			tail.frames = arrow.frames = arrowSegment.frames = Paths.getSparrowAtlas("editors/charter/event-icons/components/arrow-down");
+
+			group.add({
+				tail.animation.addByPrefix("tail", "tail");
+				tail.animation.play("tail");
+				tail;
+			});
+
+			group.add({
+				arrowSegment.animation.addByPrefix("segment", "segment");
+				arrowSegment.animation.play("segment");
+				arrowSegment.scale.y = endGap + (stepDuration * 40) - (tail.height + yGap);
+				arrowSegment.updateHitbox();
+				arrowSegment.y += tail.height;
+				arrowSegment;
+			});
+
+			group.add({
+				arrow.animation.addByPrefix("arrow", "arrow");
+				arrow.animation.play("arrow");
+				arrow;
+			});
+		}
+	}
+
+	private static function generateEventIconWarning(group:EventIconGroup) {
+		for (spr in group) {
+			spr.colorTransform.redMultiplier = spr.colorTransform.greenMultiplier = spr.colorTransform.blueMultiplier = 0.5;
+			spr.colorTransform.redOffset = 100;
+		}
+		group.add(getEventComponent("warning", 16, -8));
+		group.copyColorTransformToChildren = false;
 	}
 
 	public override function onHovered() {
@@ -238,26 +338,22 @@ class CharterEvent extends UISliceSprite implements ICharterSelectable {
 		}
 
 		for(event in events) {
-			var spr = generateEventIcon(event);
+			var spr = generateEventIcon(event, false);
 			icons.push(spr);
 			members.push(spr);
 		}
 
 		draggable = true;
-		for (event in events)
-			if (event.name == "BPM Change" || event.name == "Time Signature Change") {
-				draggable = false;
-				break;
-			}
 
 		x = (snappedToGrid && eventsBackdrop != null ? eventsBackdrop.x : 0) - (bWidth = 37 + (icons.length * 22));
 	}
 }
 
 class EventIconGroup extends FlxSpriteGroup {
-	public var forceWidth:Float = 32;
-	public var forceHeight:Float = 32;
+	public var forceWidth:Float = 16;
+	public var forceHeight:Float = 16;
 	public var dontTransformChildren:Bool = true;
+	public var copyColorTransformToChildren:Bool = true;
 
 	public function new() {
 		super();
@@ -298,6 +394,16 @@ class EventIconGroup extends FlxSpriteGroup {
 	override function get_height() {
 		return forceHeight;
 	}
+
+	override public function draw() {
+		@:privateAccess
+		if (copyColorTransformToChildren && colorTransform != null) for (child in members) child.colorTransform.__copyFrom(colorTransform);
+		super.draw();
+	}
+	
+	override function update(elapsed:Float) {
+		super.update(elapsed);
+	}
 }
 
 class EventNumber extends FlxSprite {
@@ -305,17 +411,43 @@ class EventNumber extends FlxSprite {
 	public static inline final ALIGN_CENTER:Int = 1;
 
 	public var digits:Array<Int> = [];
+	public static inline final FRAME_POINT:Int = 10;
+	public static inline final FRAME_NEGATIVE:Int = 11;
 
 	public var align:Int = ALIGN_NORMAL;
+	public var spacing:Float = 6;
 
-	public function new(x:Float, y:Float, number:Int, ?align:Int = ALIGN_NORMAL) {
+	public function new(x:Float, y:Float, number:Float, ?align:Int = ALIGN_NORMAL, spacing:Float = 6, precision:Int = 3) {
 		super(x, y);
 		this.digits = [];
 		this.align = align;
-		while (number > 0) {
-			this.digits.insert(0, number % 10);
-			number = Std.int(number / 10);
+		this.spacing = spacing;
+
+
+
+		if (number == 0) {
+			this.digits.insert(0, 0);
+		} else {
+
+			var decimals:Float = FlxMath.roundDecimal(Math.abs(number % 1), precision);
+			if (decimals > 0) this.digits.insert(0, FRAME_POINT);
+			while(decimals > 0) {
+				this.digits.push(Math.floor(decimals * 10));
+				decimals = FlxMath.roundDecimal((decimals * 10) % 1, precision);
+			}
+
+			var ints = Std.int(Math.abs(number));
+			if (ints == 0) this.digits.insert(0, 0);
+			while (ints > 0) {
+				this.digits.insert(0, ints % 10);
+				ints = Std.int(ints / 10);
+			}
+
+			if (number < 0) {
+				this.digits.insert(0, FRAME_NEGATIVE);
+			}
 		}
+
 		loadGraphic(Paths.image('editors/charter/event-icons/components/eventNums'), true, 6, 7);
 	}
 
@@ -326,20 +458,20 @@ class EventNumber extends FlxSprite {
 	override function draw() {
 		var baseX = x;
 		var offsetX = 0.0;
-		if(align == ALIGN_CENTER) offsetX = -(digits.length - 1) * frameWidth * Math.abs(scale.x) / 2;
+		if(align == ALIGN_CENTER) offsetX = -(digits.length - 1) * spacing * Math.abs(scale.x) / 2;
 
 		x = baseX + offsetX;
 		for (i in 0...digits.length) {
 			frame = frames.frames[digits[i]];
 			super.draw();
-			x += frameWidth * Math.abs(scale.x);
+			x += spacing * Math.abs(scale.x);
 		}
 		x = baseX;
 	}
 
 	public var numWidth(get, never):Float;
 	private function get_numWidth():Float {
-		return Math.abs(scale.x) * frameWidth * digits.length;
+		return Math.abs(scale.x) * spacing * digits.length;
 	}
 	public var numHeight(get, never):Float;
 	private function get_numHeight():Float {
@@ -351,7 +483,7 @@ class EventNumber extends FlxSprite {
 		var numHeight = this.numHeight;
 		width = numWidth;
 		height = numHeight;
-		offset.set(-0.5 * (numWidth - frameWidth * digits.length), -0.5 * (numHeight - frameHeight));
+		offset.set(-0.5 * (numWidth - spacing * digits.length), -0.5 * (numHeight - frameHeight));
 		centerOrigin();
 	}
 }
