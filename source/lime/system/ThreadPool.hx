@@ -547,7 +547,8 @@ class ThreadPool extends WorkOutput
 				}
 				else
 				{
-					thread = __idleThreads.pop() ?? getFreeThread();
+					thread = __idleThreads.pop();
+					if (thread == null) thread = getFreeThread();
 				}
 
 				incrementThreadJobs(thread);
