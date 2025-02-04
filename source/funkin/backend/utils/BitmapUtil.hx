@@ -22,7 +22,7 @@ class BitmapUtil {
 	 * @return Bool Whether if bitmapdata is good to go to continue to do hardware performs.
 	 */
 	public static function hardwareCheck(bmap:BitmapData, strict = false):Bool
-		return bmap?.__texture != null && (!strict || (bmap.image == null || bmap.__textureVersion >= bmap.image.version));
+		return bmap != null && bmap.__texture != null && (!strict || (bmap.image == null || bmap.__textureVersion >= bmap.image.version));
 
 	/**
 	 * Clears a BitmapData texture.
@@ -114,7 +114,9 @@ class BitmapUtil {
 		if (texture.__width == width && texture.__height == height) return;
 
 		final context = texture.__context;
-		final gl = context?.gl;
+		if (context == null) return;
+
+		final gl = context.gl;
 		if (gl == null) return;
 
 		texture.__width = width = Math.floor(Math.min(width, FlxG.bitmap.maxTextureSize));
