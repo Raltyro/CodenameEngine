@@ -48,7 +48,7 @@ class BitmapUtil {
 
 		final gl = texture.__context.gl;
 
-		gl.bindFramebuffer(gl.FRAMEBUFFER, texture.__glFramebuffer ?? texture.__getGLFramebuffer(false, 0, 0));
+		gl.bindFramebuffer(gl.FRAMEBUFFER, texture.__glFramebuffer != null ? texture.__glFramebuffer : texture.__getGLFramebuffer(false, 0, 0));
 
 		gl.colorMask(true, true, true, true);
 		gl.clearColor(color.redFloat, color.greenFloat, color.blueFloat, color.alphaFloat);
