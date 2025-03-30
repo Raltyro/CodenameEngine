@@ -10,6 +10,8 @@ import openfl.geom.Rectangle;
 import flixel.util.FlxColor;
 import flixel.FlxG;
 
+import funkin.options.Options;
+
 @:access(openfl.display.BitmapData)
 @:access(openfl.display.IBitmapDrawable)
 @:access(openfl.display3D.textures.TextureBase)
@@ -176,7 +178,7 @@ class BitmapUtil {
 	 * @param bmap BitmapData
 	 */
 	public static function toHardware(bmap:BitmapData):Void {
-		if (Main.forceGPUOnlyBitmapsOff) return;
+		if (Main.forceGPUOnlyBitmapsOff || !Options.gpuOnlyBitmaps) return;
 
 		final context = FlxG.stage.context3D;
 		if (context == null || bmap.image == null) return;
