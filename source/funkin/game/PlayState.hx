@@ -1018,8 +1018,6 @@ class PlayState extends MusicBeatState
 
 		camZoomingInterval = cast songData.meta.beatsPerMeasure.getDefault(4);
 
-		Conductor.changeBPM(songData.meta.bpm, cast songData.meta.beatsPerMeasure.getDefault(4), cast songData.meta.stepsPerBeat.getDefault(4));
-
 		curSong = songData.meta.name.toLowerCase();
 
 		inst = FlxG.sound.load(Paths.inst(SONG.meta.name, difficulty));
@@ -1235,8 +1233,11 @@ class PlayState extends MusicBeatState
 			accFormat.format.color = curRating.color;
 			accuracyTxt.text = 'Accuracy:${accuracy < 0 ? "-%" : '${CoolUtil.quantize(accuracy * 100, 100)}%'} - ${curRating.rating}';
 
-			accuracyTxt._formatRanges[0].range.start = accuracyTxt.text.length - curRating.rating.length;
-			accuracyTxt._formatRanges[0].range.end = accuracyTxt.text.length;
+			for (i => frmtRange in accuracyTxt._formatRanges) if (frmtRange.format == accFormat) {
+				accuracyTxt._formatRanges[i].range.start = accuracyTxt.text.length - curRating.rating.length;
+				accuracyTxt._formatRanges[i].range.end = accuracyTxt.text.length;
+				break;
+			}
 		}
 	}
 
@@ -1404,6 +1405,7 @@ class PlayState extends MusicBeatState
 				if (strumLines.members[event.params[0]] != null && strumLines.members[event.params[0]].characters != null)
 					for (char in strumLines.members[event.params[0]].characters)
 						if (char != null) char.playAnim(event.params[1], event.params[2], null);
+			case "Time Signature Change": // automatically handled by conductor
 			case "Unknown": // nothing
 		}
 	}
