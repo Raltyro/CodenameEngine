@@ -192,7 +192,7 @@ class Paths
 	public static function getFrames(key:String, assetsPath:Bool = false, ?library:String) {
 		if (tempFramesCache.exists(key)) {
 			var frames = tempFramesCache[key];
-			if (frames.parent != null && frames.parent.bitmap != null && @:privateAccess frames.parent.__isValid)
+			if (frames.parent != null && frames.parent.bitmap != null && @:privateAccess frames.parent.bitmap.__isValid)
 				return frames;
 			else
 				tempFramesCache.remove(key);
