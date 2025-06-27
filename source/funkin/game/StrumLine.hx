@@ -215,7 +215,7 @@ class StrumLine extends FlxTypedGroup<Strum> {
 	var __notePerStrum:Array<Note> = [];
 
 	function __inputProcessPressed(note:Note) {
-		if (__pressed[note.strumID] && note.isSustainNote && note.canBeHit && !note.wasGoodHit) {
+		if (__pressed[note.strumID] && note.isSustainNote && daNote.strumTime < __updateNote_songPos && !note.wasGoodHit) {
 			PlayState.instance.goodNoteHit(this, note);
 		}
 	}
