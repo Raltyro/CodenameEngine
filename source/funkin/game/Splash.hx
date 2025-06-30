@@ -20,8 +20,6 @@ class Splash extends FunkinSprite
 		@:privateAccess {
 			spr.setPosition(source.x, source.y);
 			spr.frames = source.frames;
-			if (source.animateAtlas != null && source.atlasPath != null)
-				spr.loadSprite(source.atlasPath);
 			spr.animation.copyFrom(source.animation);
 			spr.visible = source.visible;
 			spr.alpha = source.alpha;

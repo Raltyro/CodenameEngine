@@ -38,16 +38,16 @@ function create() {
 	tankman = new FunkinSprite(game.dad.x + game.dad.globalOffset.x + 520, game.dad.y + game.dad.globalOffset.y + 225);
 	tankman.antialiasing = true;
 	tankman.loadSprite(Paths.image('game/cutscenes/tank/stress-tankman'));
-	tankman.animateAtlas.anim.addBySymbol('p1', 'TANK TALK 3 P1 UNCUT', 0, false);
-	tankman.animateAtlas.anim.addBySymbol('p2', 'TANK TALK 3 P2 UNCUT', 0, false);
+	tankman.animation.addBySymbol('p1', 'TANK TALK 3 P1 UNCUT', 0, false);
+	tankman.animation.addBySymbol('p2', 'TANK TALK 3 P2 UNCUT', 0, false);
 	tankman.playAnim('p1');
 
 	pico = new FunkinSprite(game.gf.x + game.gf.globalOffset.x + 150, game.gf.y + game.gf.globalOffset.y + 395);
 	pico.antialiasing = true;
 	pico.loadSprite(Paths.image('game/cutscenes/tank/stress-pico'));
-	pico.animateAtlas.anim.addBySymbol('die', 'GF Time to Die sequence', 24, false);
-	pico.animateAtlas.anim.addBySymbol('saves', 'Pico Saves them sequence', 24, false);
-	pico.animateAtlas.anim.addBySymbol('idle', 'Pico Dual Wield on Speaker idle', 24, true);
+	pico.animation.addBySymbol('die', 'GF Time to Die sequence', 24, false);
+	pico.animation.addBySymbol('saves', 'Pico Saves them sequence', 24, false);
+	pico.animation.addBySymbol('idle', 'Pico Dual Wield on Speaker idle', 24, true);
 	pico.scrollFactor.set(0.95, 0.95);
 	pico.playAnim("idle");
 	pico.visible = false;
@@ -125,7 +125,7 @@ function update(elapsed) {
 }
 
 function lipSync(char:FunkinSprite, begin:Float, end:Float) {
-	char.animateAtlas.anim.curFrame = Std.int(FlxMath.remapToRange(stressCutscene.time, begin, end, 0, char.animateAtlas.anim.length-1));
+	//char.animateAtlas.anim.curFrame = Std.int(FlxMath.remapToRange(stressCutscene.time, begin, end, 0, char.animateAtlas.anim.length-1));
 }
 
 function focusOn(char, snap:Bool = false) {

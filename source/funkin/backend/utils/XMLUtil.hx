@@ -233,8 +233,8 @@ class XMLUtil {
 		if (animData.name != null) {
 			if (animData.fps <= 0 #if web || animData.fps == null #end) animData.fps = 24;
 
-			if (sprite is FunkinSprite && cast(sprite, FunkinSprite).animateAtlas != null) {
-				var animateAnim = cast(sprite, FunkinSprite).animateAtlas.anim;
+			if (sprite is FunkinSprite && cast(sprite, FunkinSprite).isAnimate) {
+				var animateAnim = cast(sprite, FunkinSprite).animateAnim;
 				if(animData.anim == null)
 					return MISSING_PROPERTY;
 

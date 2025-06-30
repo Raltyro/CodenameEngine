@@ -1,95 +1,53 @@
 package funkin.backend;
 
-import flixel.graphics.frames.FlxFramesCollection;
-import openfl.geom.ColorTransform;
-import flixel.math.FlxMatrix;
 import flixel.math.FlxAngle;
-import flixel.math.FlxRect;
-import flixel.graphics.frames.FlxFrame;
-import flixel.math.FlxPoint;
-import openfl.display.BlendMode;
 
-class FlxAnimate extends flxanimate.FlxAnimate {
-	static var rMatrix = new FlxMatrix();
+class FlxAnimate extends animate.FlxAnimate {
+	override function drawAnimate(camera:FlxCamera) {
+		_matrix.identity();
 
-	override function drawLimb(limb:FlxFrame, _rMatrix:FlxMatrix, ?colorTransform:ColorTransform, ?blendMode:BlendMode)
-	{
-		if (alpha == 0 || colorTransform != null && (colorTransform.alphaMultiplier == 0 || colorTransform.alphaOffset == -255) || limb == null || limb.type == EMPTY)
-			return;
-
-		if (blendMode == null)
-			blendMode = BlendMode.NORMAL;
-
-		for (camera in cameras)
-		{
-			rMatrix.identity();
-			limb.prepareMatrix(rMatrix, FlxFrameAngle.ANGLE_0, _checkFlipX() != camera.flipX, _checkFlipY() != camera.flipY);
-			rMatrix.concat(_rMatrix);
-			if (!camera.visible || !camera.exists || !limbOnScreen(limb, _rMatrix, camera))
-				return;
-
-			getScreenPosition(_point, camera).subtractPoint(offset);
-			rMatrix.translate(-origin.x, -origin.y);
-			if (limb != _pivot) {
-				if (frameOffsetAngle != null && frameOffsetAngle != angle)
-				{
-					var angleOff = (frameOffsetAngle - angle) * FlxAngle.TO_RAD;
-					var cos = Math.cos(angleOff);
-					var sin = Math.sin(angleOff);
-					// cos doesnt need to be negated
-					rMatrix.rotateWithTrig(cos, -sin);
-					rMatrix.translate(-frameOffset.x, -frameOffset.y);
-					rMatrix.rotateWithTrig(cos, sin);
-				}
-				else
-				{
-					rMatrix.translate(-frameOffset.x, -frameOffset.y);
-				}
-				rMatrix.scale(scale.x, scale.y);
-
-				if (!matrixExposed && bakedRotationAngle <= 0)
-				{
-					updateTrig();
-
-					if (angle != 0)
-						rMatrix.rotateWithTrig(_cosAngle, _sinAngle);
-				}
-			}
-			else
-				rMatrix.a = rMatrix.d = 0.7 / camera.zoom;
-
-			if (matrixExposed)
-			{
-				rMatrix.concat(transformMatrix);
-			}
-			else
-			{
-				rMatrix.concat(@:privateAccess flxanimate.FlxAnimate._skewMatrix);
-			}
-
-			_point.addPoint(origin);
-			if (isPixelPerfectRender(camera))
-			{
-				_point.floor();
-			}
-
-			rMatrix.translate(_point.x, _point.y);
-			camera.drawPixels(limb, null, rMatrix, colorTransform, blendMode, antialiasing, shaderEnabled ? shader : null);
-			#if FLX_DEBUG
-			FlxBasic.visibleCount++;
-			#end
+		if (!useLegacyBounds) {
+			@:privateAccess var bounds = timeline._bounds;
+			_matrix.translate(-bounds.x, -bounds.y);
 		}
 
-		// doesnt work, needs to be remade
-		// #if FLX_DEBUG
-		// if (FlxG.debugger.drawDebug)
-		// 	drawDebug();
-		// #end
-	}
+		var doFlipX = checkFlipX() != camera.flipX;
+		var doFlipY = checkFlipY() != camera.flipY;
 
-	override function limbOnScreen(limb:FlxFrame, m:FlxMatrix, ?Camera:FlxCamera)
-	{
-		// TODO: ACTUAL OPTIMISATION
-		return true;
+		_matrix.scale(doFlipX ? -1 : 1, doFlipY ? -1 : 1);
+		_matrix.translate(doFlipX ? frame.sourceSize.x : 0, doFlipY ? frame.sourceSize.y : 0);
+		_matrix.translate(-origin.x, -origin.y);
+
+		if (frameOffsetAngle != null && frameOffsetAngle != angle) {
+			var angleOff = (frameOffsetAngle - angle) * FlxAngle.TO_RAD;
+			var cos = Math.cos(angleOff);
+			var sin = Math.sin(angleOff);
+
+			_matrix.rotateWithTrig(cos, -sin);
+			_matrix.translate(-frameOffset.x, -frameOffset.y);
+			_matrix.rotateWithTrig(cos, sin);
+		}
+		else
+			_matrix.translate(-frameOffset.x, -frameOffset.y);
+
+		_matrix.scale(scale.x, scale.y);
+
+		if (angle != 0) {
+			updateTrig();
+			_matrix.rotateWithTrig(_cosAngle, _sinAngle);
+		}
+
+		if (skew.x != 0 || skew.y != 0) {
+			updateSkew();
+			@:privateAccess _matrix.concat(FlxAnimate._skewMatrix);
+		}
+
+		getScreenPosition(_point, camera).subtractPoint(offset).add(origin.x, origin.y);
+		_matrix.translate(_point.x, _point.y);
+
+		if (renderStage) drawStage(camera);
+
+		timeline.currentFrame = animation.frameIndex;
+		timeline.draw(camera, _matrix, colorTransform, blend, antialiasing, shader);
 	}
 }

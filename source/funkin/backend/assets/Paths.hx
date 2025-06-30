@@ -12,6 +12,7 @@ import funkin.backend.scripting.Script;
 import flixel.graphics.frames.FlxAtlasFrames;
 import flixel.system.FlxAssets.FlxGraphicAsset;
 import flixel.graphics.FlxGraphic;
+import animate.FlxAnimateFrames;
 
 using StringTools;
 
@@ -181,8 +182,14 @@ class Paths
 	inline static public function getAsepriteAtlasAlt(key:String)
 		return FlxAtlasFrames.fromAseprite('$key.png', '$key.json');
 
+	inline static public function getAnimateAtlas(key:String, ?library:String)
+		return FlxAnimateFrames.fromAnimate(getPath('images/$key', library));
+
+	inline static public function getAnimateAtlasAlt(key:String)
+		return FlxAnimateFrames.fromAnimate(key);
+
 	inline static public function getAssetsRoot():String
-		return  ModsFolder.currentModFolder != null ? '${ModsFolder.modsPath}${ModsFolder.currentModFolder}' : #if (sys && TEST_BUILD) './${Main.pathBack}assets/' #else './assets' #end;
+		return ModsFolder.currentModFolder != null ? '${ModsFolder.modsPath}${ModsFolder.currentModFolder}' : #if (sys && TEST_BUILD) './${Main.pathBack}assets/' #else './assets' #end;
 
 	/**
 	 * Gets frames at specified path.
@@ -258,6 +265,8 @@ class Paths
 			return Paths.getPackerAtlasAlt(noExt);
 		} else if (Assets.exists('$noExt.json')) {
 			return Paths.getAsepriteAtlasAlt(noExt);
+		} else if (Assets.exists('$noExt/Animation.json')) {
+			return Paths.getAnimateAtlasAlt(noExt);
 		}
 
 		var graph:FlxGraphic = FlxG.bitmap.add(path, Unique, Key);

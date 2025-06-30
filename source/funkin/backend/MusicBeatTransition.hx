@@ -60,11 +60,10 @@ class MusicBeatTransition extends MusicBeatSubstate {
 
 		transitionSprite = new FunkinSprite();
 		transitionSprite.loadSprite(Paths.image('menus/transitionSpr'));
-		if (transitionSprite.animateAtlas == null) {
+		if (transitionSprite.isAnimate) transitionSprite.screenCenter();
+		else {
 			transitionSprite.setGraphicSize(transitionCamera.width, transitionCamera.height);
 			transitionSprite.updateHitbox();
-		} else {
-			transitionSprite.screenCenter();
 		}
 		transitionCamera.flipY = !transOut;
 		add(transitionSprite);
