@@ -11,6 +11,7 @@ import flixel.math.FlxPoint;
 import flixel.system.FlxAssets.FlxGraphicAsset;
 
 import animate.internal.Timeline;
+import animate.FlxAnimate;
 import animate.FlxAnimateFrames;
 import animate.FlxAnimateController;
 
@@ -39,7 +40,7 @@ enum abstract XMLAnimType(Int)
 	}
 }
 
-class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements IOffsetCompatible implements IXMLEvents
+class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements IOffsetCompatible implements IXMLEvents implements FlxAnimate.IFlxAnimate
 {
 	public var extra:Map<String, Dynamic> = [];
 
@@ -130,14 +131,14 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 	public override function destroy()
 	{
 		super.destroy();
-		anim = null;
+		animateAnim = null;
 		library = null;
 		timeline = null;
 
 		if (animOffsets != null) {
 			for (i => v in animOffsets) {
 				if (v != null) v.put();
-				v.remove(key);
+				animOffsets.remove(i);
 			}
 			animOffsets = null;
 		}
@@ -181,6 +182,11 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 		var r = super.getScreenBounds(newRect, camera);
 		__doPostZoomScaleProcedure();
 		return r;
+	}
+
+	public override function drawComplex(camera:FlxCamera)
+	{
+		super.drawComplex(camera);
 	}
 
 	public override function doAdditionalMatrixStuff(matrix:FlxMatrix, camera:FlxCamera)
@@ -240,7 +246,7 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 	function drawAnimate(camera:FlxCamera) {
 		_matrix.identity();
 
-		@:privateAccessbvar var bounds = timeline._bounds;
+		@:privateAccess var bounds = timeline._bounds;
 		_matrix.translate(-bounds.x, -bounds.y);
 
 		var doFlipX = checkFlipX() != camera.flipX;
@@ -294,7 +300,7 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 		if (isAnimate) {
 			library = cast frames;
 			timeline = library.timeline;
-			animateAnim.updateTimelineBounds();
+			@:privateAccess animateAnim.updateTimelineBounds();
 		}
 		else {
 			library = null;

@@ -39,7 +39,7 @@ class FlxAnimate extends animate.FlxAnimate {
 
 		if (skew.x != 0 || skew.y != 0) {
 			updateSkew();
-			@:privateAccess _matrix.concat(FlxAnimate._skewMatrix);
+			@:privateAccess _matrix.concat(animate.FlxAnimate._skewMatrix);
 		}
 
 		getScreenPosition(_point, camera).subtractPoint(offset).add(origin.x, origin.y);
