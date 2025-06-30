@@ -6,6 +6,12 @@ import funkin.backend.chart.ChartData;
 import funkin.backend.system.interfaces.IBeatReceiver;
 import funkin.editors.charter.Charter;
 
+enum BeatType {
+	STEP;
+	BEAT;
+	MEASURE;
+}
+
 @:structInit
 class BPMChangeEvent
 {
@@ -25,6 +31,16 @@ class BPMChangeEvent
 
 final class Conductor
 {
+	public static function getBeats(?every:BeatType, interval:Float, offset:Float = 0):Float {
+		final beat = switch(every) {
+			case MEASURE: curMeasureFloat;
+			case STEP: curStepFloat;
+			default: curBeatFloat;
+		}
+		if (interval <= 0) return beat - offset;
+		else return Math.floor((beat - offset) * interval) / interval;
+	}
+
 	/**
 	 * FlxSignals
 	 */
@@ -96,11 +112,20 @@ final class Conductor
 		return bpmChangeMap.length == 0 ? 4 : bpmChangeMap[curChangeIndex].beatsPerMeasure;
 
 	/**
-	 * Number of steps per beat (bottom number in time signature). Defaults to 4.
+	 * Number of steps per beat. Defaults to 4.
+	 * Not a divisor number for time signature, it does the complete opposite.
+	 * It's because CNE Conductor is based in sixteenth note instead of beat.
 	 */
-	public static var stepsPerBeat(get, never):Float;
+	public static var stepsPerBeat(get, never):Int;
 	private static function get_stepsPerBeat()
 		return bpmChangeMap.length == 0 ? 4 : bpmChangeMap[curChangeIndex].stepsPerBeat;
+
+	/**
+	 * How much value notes to divide for beat (bottom or divisor number in time signature).
+	 * Only for a convinient way to access divisor instead of multiply by steps per beat.
+	 */
+	public static var denominator(get, never):Int;
+	private static function get_denominator() return Math.floor(16 / stepsPerBeat);
 
 	/**
 	 * Current step
@@ -203,7 +228,7 @@ final class Conductor
 		var events:Array<ChartEvent> = [];
 		for (e in song.events) if (e.params != null && (e.name == "BPM Change" || e.name == "Time Signature Change" || e.name == "Continuous BPM Change")) events.push(e);
 		events.sort(function(a, b) {
-			if (a.time == b.time) {
+			if (MathUtil.equal(a.time, b.time)) {
 				if (a.name == "Continuous BPM Change") return 1;
 				if (b.name == "Continuous BPM Change") return -1;
 			}
@@ -217,7 +242,7 @@ final class Conductor
 
 	private static function mapEvent(e:ChartEvent, curChange:BPMChangeEvent) {
 		var name = e.name, params = e.params, time = e.time;
-		if (curChange.continuous && time < curChange.endSongTime) { //ensure that you cannot place any conductor events during a continuous change
+		if (curChange.continuous && MathUtil.lessThan(time, curChange.endSongTime)) { //ensure that you cannot place any conductor events during a continuous change
 			invalidEvents.push(e);
 			Logs.trace('Invalid Conductor event "${e.name}" at ${e.time} (Intersecting continuous change!)', WARNING);
 			return curChange;
@@ -231,13 +256,13 @@ final class Conductor
 
 			if (curChange.songTime != time) curChange = mapBPMChange(curChange, time, curChange.bpm);
 			curChange.beatsPerMeasure = params[0];
-			curChange.stepsPerBeat = params[1];
-			
+			curChange.stepsPerBeat = Math.floor(16 / params[1]); // convert from denominator to stepsPerBeat
+
 			curChange.stepTime = CoolUtil.floorInt(curChange.stepTime + .99998);
 			curChange.beatTime = CoolUtil.floorInt(curChange.beatTime + .99998);
 			curChange.measureTime = CoolUtil.floorInt(curChange.measureTime + .99998);
-		} else if (name == "Continuous BPM Change") {
-			
+		}
+		else if (name == "Continuous BPM Change") {
 			var prevBPM = curChange.bpm;
 			if (curChange.bpm == params[0]) {
 				invalidEvents.push(e);
@@ -266,9 +291,9 @@ final class Conductor
 		bpmChangeMap = [curChange];
 		invalidEvents = [];
 
-		for(event in Charter.instance.eventsGroup.members) {
+		for (event in Charter.instance.eventsGroup.members) {
 			event.events.sort(function(a, b) {
-				if (a.time == b.time) {
+				if (MathUtil.equal(a.time, b.time)) {
 					if (a.name == "Continuous BPM Change") return 1;
 					if (b.name == "Continuous BPM Change") return -1;
 				}
@@ -282,11 +307,8 @@ final class Conductor
 				if ((e.name == "BPM Change" || e.name == "Time Signature Change" || e.name == "Continuous BPM Change")) {
 					curChange = mapEvent(e, curChange);
 				}
-
 			}
 		}
-
-		
 	}
 
 	private static var elapsed:Float;
@@ -303,12 +325,10 @@ final class Conductor
 			return;
 		}
 
-		if (lastSongPos != (lastSongPos = FlxG.sound.music.time - songOffset)) {
-			// update conductor
+		if (lastSongPos != (lastSongPos = FlxG.sound.music.time - songOffset))
 			songPosition = lastSongPos;
-		} else {
+		else
 			songPosition += songOffset + elapsed * 1000;
-		}
 	}
 
 	private static function onStateSwitch(newState:FlxState) {

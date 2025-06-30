@@ -51,6 +51,18 @@ class FNFLegacyParser {
 				continue; // Yoshi Engine charts crash fix
 			}
 
+			var newBeatsPerMeasure:Float = section.sectionBeats != null ? section.sectionBeats : data.beatsPerMeasure.getDefault(4); // Default to 4 if sectionBeats is null or undefined (oops :3)
+
+			if (newBeatsPerMeasure != beatsPerMeasure) {
+				beatsPerMeasure = newBeatsPerMeasure;
+				
+				result.events.push({
+					time: curTime,
+					name: "Time Signature Change",
+					params: [newBeatsPerMeasure, 4]
+				});	
+			}
+
 			if (camFocusedBF != (camFocusedBF = section.mustHitSection)) {
 				result.events.push({
 					time: curTime,
@@ -101,16 +113,6 @@ class FNFLegacyParser {
 					time: curTime,
 					name: "BPM Change",
 					params: [section.bpm]
-				});
-			}
-
-			if (section.sectionBeats != null && section.sectionBeats != beatsPerMeasure) {
-				beatsPerMeasure = section.sectionBeats != null ? section.sectionBeats : data.beatsPerMeasure.getDefault(4);
-
-				result.events.push({
-					time: curTime,
-					name: "Time Signature Change",
-					params: [section.sectionBeats, 4]
 				});
 			}
 

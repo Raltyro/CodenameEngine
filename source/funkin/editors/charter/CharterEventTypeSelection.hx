@@ -38,8 +38,8 @@ class CharterEventTypeSelection extends UISubstateWindow {
 		var disableConductorEvents:Bool = false;
 		var disableOnlyContinuousChanges:Bool = false;
 		for (change in Conductor.bpmChangeMap) {
-			if (change.continuous && eventStepTime >= change.stepTime && eventStepTime < change.endStepTime) {
-				disableOnlyContinuousChanges = eventStepTime == change.stepTime; //allow time sig and instant bpm changes on the same event
+			if (change.continuous && MathUtil.greaterThanEqual(eventStepTime, change.stepTime) && MathUtil.lessThan(eventStepTime, change.endStepTime)) {
+				disableOnlyContinuousChanges = MathUtil.equal(eventStepTime, change.stepTime); //allow time sig and instant bpm changes on the same event
 				disableConductorEvents = !disableOnlyContinuousChanges;
 			}
 		}

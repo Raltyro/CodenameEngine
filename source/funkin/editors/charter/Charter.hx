@@ -1243,12 +1243,13 @@ class Charter extends UIState {
 			for (strumLine in strumLines.members) strumLine.vocals.pause();
 		}
 
-		songPosInfo.text = '${CoolUtil.timeToStr(Conductor.songPosition)} / ${CoolUtil.timeToStr(songLength)}'
-		+ '\nStep: ${curStep}'
-		+ '\nBeat: ${curBeat}'
-		+ '\nMeasure: ${curMeasure}'
-		+ '\nBPM: ${Conductor.bpm}'
-		+ '\nTime Signature: ${Conductor.beatsPerMeasure}/${Conductor.stepsPerBeat}';
+		var curChange = Conductor.curChange;
+		songPosInfo.text = '${CoolUtil.timeToStr(songPos)} / ${CoolUtil.timeToStr(songLength)}'
+		+ '\nStep: $curStep'
+		+ '\nBeat: $curBeat'
+		+ '\nMeasure: $curMeasure'
+		+ '\nBPM: ${(curChange != null && curChange.continuous && curChange.endSongTime > songPos) ? CoolUtil.quantize(Conductor.bpm, 2) : Conductor.bpm}'
+		+ '\nTime Signature: ${Conductor.beatsPerMeasure}/${Conductor.denominator}';
 
 		if (charterCamera.zoom != (charterCamera.zoom = lerp(charterCamera.zoom, __camZoom, __firstFrame ? 1 : 0.125)))
 			updateDisplaySprites();

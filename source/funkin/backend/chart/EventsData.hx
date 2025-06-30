@@ -33,7 +33,7 @@ class EventsData {
 		],
 		"BPM Change" => [{name: "Target BPM", type: TFloat(1.00, 9999, 0.001, 3), defValue: 100}],
 		"Continuous BPM Change" => [{name: "Target BPM", type: TFloat(1.00, 9999, 0.001, 3), defValue: 100}, {name: "Time (steps)", type: TFloat(0.25, 9999, 0.25, 2), defValue: 4}],
-		"Time Signature Change" => [{name: "Target Beat Count", type: TFloat(1), defValue: 4}, {name: "Target Step Count", type: TFloat(1), defValue: 4}],
+		"Time Signature Change" => [{name: "Target Numerator", type: TFloat(1), defValue: 4}, {name: "Target Denominator", type: TFloat(1), defValue: 4}],
 		"Scroll Speed Change" => [
 			{name: "Tween Speed?", type: TBool, defValue: true},
 			{name: "New Speed", type: TFloat(0.01, 99, 0.01, 2), defValue: 1.},
@@ -100,7 +100,14 @@ class EventsData {
 				var finalParams:Array<EventParamInfo> = [];
 				for (paramData in cast(data.params, Array<Dynamic>)) {
 					try {
-						finalParams.push({name: paramData.name, type: hscriptInterp.expr(hscriptParser.parseString(paramData.type)), defValue: paramData.defaultValue});
+						finalParams.push({
+							name: paramData.name,
+							type: hscriptInterp.expr(hscriptParser.parseString(paramData.type)),
+							defValue: paramData.defaultValue,
+
+							x: paramData.x,
+							y: paramData.y
+						});
 					} catch (e) {trace('Error parsing event param ${paramData.name} - ${eventName}: $e'); finalParams.push(null);}
 				}
 				eventsParams.set(eventName, finalParams);
@@ -120,6 +127,9 @@ typedef EventParamInfo = {
 	var name:String;
 	var type:EventParamType;
 	var defValue:Dynamic;
+
+	@:optional var x:Float;
+	@:optional var y:Float;
 }
 
 enum EventParamType {

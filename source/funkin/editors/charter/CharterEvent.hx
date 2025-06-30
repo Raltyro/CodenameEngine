@@ -140,7 +140,7 @@ class CharterEvent extends UISliceSprite implements ICharterSelectable {
 				graphic = defaultPath;
 		}
 
-		return new FlxSprite().loadGraphic(graphic);
+		return new FlxSprite(graphic);
 	}
 
 	/**
@@ -154,7 +154,7 @@ class CharterEvent extends UISliceSprite implements ICharterSelectable {
 	public static function getEventComponent(type:String, x:Float = 0.0, y:Float = 0.0) {
 		var componentPath = Paths.image("editors/charter/event-icons/components/" + type);
 		if(Assets.exists(componentPath))
-			return new FlxSprite(x, y).loadGraphic(componentPath);
+			return new FlxSprite(x, y, componentPath);
 
 		Logs.trace('Could not find component $type', WARNING);
 		return null;
@@ -423,12 +423,10 @@ class EventNumber extends FlxSprite {
 		this.align = align;
 		this.spacing = spacing;
 
-
-
 		if (number == 0) {
 			this.digits.insert(0, 0);
-		} else {
-
+		}
+		else {
 			var decimals:Float = FlxMath.roundDecimal(Math.abs(number % 1), precision);
 			if (decimals > 0) this.digits.insert(0, FRAME_POINT);
 			while(decimals > 0) {
