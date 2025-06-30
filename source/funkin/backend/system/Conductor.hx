@@ -7,9 +7,9 @@ import funkin.backend.system.interfaces.IBeatReceiver;
 import funkin.editors.charter.Charter;
 
 enum BeatType {
-	STEP;
 	BEAT;
 	MEASURE;
+	STEP;
 }
 
 @:structInit
@@ -38,7 +38,7 @@ final class Conductor
 			default: curBeatFloat;
 		}
 		if (interval <= 0) return beat - offset;
-		else return Math.floor((beat - offset) * interval) / interval;
+		else return Math.floor((beat - offset) / interval) * interval;
 	}
 
 	/**

@@ -22,8 +22,10 @@ class EventsData {
 			{name: "Camera", type: TDropDown(['camGame', 'camHUD']), defValue: "camGame"}
 		],
 		"Camera Modulo Change" => [
-			{name: "Modulo Interval (Beats)", type: TInt(1, 9999999, 1), defValue: 4},
-			{name: "Bump Strength", type: TFloat(0.1, 10, 0.01, 2), defValue: 1}
+			{name: "Modulo Interval", type: TInt(1, 9999999, 1), defValue: 4},
+			{name: "Bump Strength", type: TFloat(0.1, 10, 0.01, 2), defValue: 1},
+			{name: "Every Beat Type", type: TDropDown(['BEAT', 'MEASURE', 'STEP']), defValue: 'BEAT'},
+			{name: "Beat Offset", type: TFloat(-10, 10, 0.25, 2), defValue: 0}
 		],
 		"Camera Flash" => [
 			{name: "Reversed?", type: TBool, defValue: false},

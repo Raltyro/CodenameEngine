@@ -1468,6 +1468,12 @@ class PlayState extends MusicBeatState
 			case "Camera Modulo Change":
 				camZoomingInterval = event.params[0];
 				camZoomingStrength = event.params[1];
+				camZoomingEvery = switch (event.params[2].toUpperCase()) {
+					case "STEP": STEP;
+					case "MEASURE": MEASURE;
+					default: BEAT;
+				}
+				camZoomingOffset = event.params[2];
 			case "Camera Flash":
 				var camera:FlxCamera = event.params[3] == "camHUD" ? camHUD : camGame;
 
