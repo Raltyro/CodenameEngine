@@ -83,7 +83,7 @@ final class Conductor
 	 */
 	public static var bpm(get, never):Float;
 	private static function get_bpm()
-		return curChangeIndex == 0 ? startingBPM : getTimeWithIndexInBPM(songPosition, curChangeIndex);
+		return (curChangeIndex == 0 || bpmChange.length == 0) ? startingBPM : getTimeWithIndexInBPM(songPosition, curChangeIndex);
 
 	/**
 	 * Starting BPM
