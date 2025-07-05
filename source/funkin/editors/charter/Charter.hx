@@ -1248,7 +1248,7 @@ class Charter extends UIState {
 		+ '\nStep: $curStep'
 		+ '\nBeat: $curBeat'
 		+ '\nMeasure: $curMeasure'
-		+ '\nBPM: ${(curChange != null && curChange.continuous && curChange.endSongTime > songPos) ? CoolUtil.quantize(Conductor.bpm, 2) : Conductor.bpm}'
+		+ '\nBPM: ${(curChange != null && curChange.continuous && curChange.endSongTime > songPos) ? FlxMath.roundDecimal(Conductor.bpm, 3) : Conductor.bpm}'
 		+ '\nTime Signature: ${Conductor.beatsPerMeasure}/${Conductor.denominator}';
 
 		if (charterCamera.zoom != (charterCamera.zoom = lerp(charterCamera.zoom, __camZoom, __firstFrame ? 1 : 0.125)))
