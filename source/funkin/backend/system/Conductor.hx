@@ -73,9 +73,10 @@ final class Conductor
 	/**
 	 * Current bpmChangeMap
 	 */
-	public static var curChange(get, never):Null<BPMChangeEvent>;
+	public static var curChange(get, never):BPMChangeEvent;
+	private static var dummyChange:BPMChangeEvent = {bpm: 100, beatsPerMeasure: 4, stepsPerBeat: 4, songTime: 0, stepTime: 0, beatTime: 0, measureTime: 0};
 	private static function get_curChange()
-		return bpmChangeMap[curChangeIndex];
+		return bpmChangeMap.length == 0 ? dummyChange : bpmChangeMap[curChangeIndex];
 
 	/**
 	 * Current BPM
@@ -89,7 +90,7 @@ final class Conductor
 	 */
 	public static var startingBPM(get, never):Float;
 	private static function get_startingBPM()
-		return bpmChangeMap.length == 0 ? 100 : bpmChangeMap[0].bpm;
+		return (bpmChangeMap.length == 0 ? dummyChange : bpmChangeMap[0]).bpm;
 
 	/**
 	 * Current Crochet (time per beat), in milliseconds.
@@ -109,7 +110,7 @@ final class Conductor
 	 */
 	public static var beatsPerMeasure(get, never):Float;
 	private static function get_beatsPerMeasure()
-		return bpmChangeMap.length == 0 ? 4 : bpmChangeMap[curChangeIndex].beatsPerMeasure;
+		return (bpmChangeMap.length == 0 ? dummyChange : bpmChangeMap[curChangeIndex]).beatsPerMeasure;
 
 	/**
 	 * Number of steps per beat. Defaults to 4.
@@ -118,7 +119,7 @@ final class Conductor
 	 */
 	public static var stepsPerBeat(get, never):Int;
 	private static function get_stepsPerBeat()
-		return bpmChangeMap.length == 0 ? 4 : bpmChangeMap[curChangeIndex].stepsPerBeat;
+		return (bpmChangeMap.length == 0 ? dummyChange : bpmChangeMap[curChangeIndex]).stepsPerBeat;
 
 	/**
 	 * How much value notes to divide for beat (bottom or divisor number in time signature).
@@ -126,6 +127,24 @@ final class Conductor
 	 */
 	public static var denominator(get, never):Int;
 	private static function get_denominator() return Math.floor(16 / stepsPerBeat);
+
+	/**
+	 * Last step from BPM Change
+	 */
+	public static var lastStepChange(get, never):Float;
+	private static function get_lastStepChange() return curChange.stepTime;
+
+	/**
+	 * Last beat from BPM Change
+	 */
+	public static var lastBeatChange(get, never):Float;
+	private static function get_lastBeatChange() return curChange.beatTime;
+
+	/**
+	 * Last measure from BPM Change
+	 */
+	public static var lastMeasureChange(get, never):Float;
+	private static function get_lastMeasureChange() return curChange.measureTime;
 
 	/**
 	 * Current step
@@ -484,7 +503,7 @@ final class Conductor
 	}
 
 	public static function getTimeInBPM(time:Float):Float {
-		if (bpmChangeMap.length == 0) return 100;
+		if (bpmChangeMap.length == 0) return dummyChange.bpm;
 		return getTimeWithIndexInBPM(time, getTimeInChangeIndex(time));
 	}
 
@@ -505,7 +524,7 @@ final class Conductor
 
 	public static function getTimeInBeats(time:Float, from:Int = 0):Float {
 		var index = getTimeInChangeIndex(time, from);
-		if (index == -1) return time / (60000 / 100);
+		if (index == -1) return time / (60000 / dummyChange.bpm);
 		else if (index == 0) return time / (15000 / bpmChangeMap[index].bpm) / bpmChangeMap[index].stepsPerBeat;
 		else {
 			var change = bpmChangeMap[index];
@@ -540,7 +559,7 @@ final class Conductor
 
 	public static function getMeasuresInTime(measureTime:Float, from:Int = 0):Float {
 		var index = getMeasuresInChangeIndex(measureTime, from);
-		if (index == -1) return measureTime * (60000 / 100 / 4);
+		if (index == -1) return measureTime * (15000 / dummyChange.bpm);
 		else if (index == 0) return measureTime * (15000 / bpmChangeMap[index].bpm) * bpmChangeMap[index].stepsPerBeat * bpmChangeMap[index].beatsPerMeasure;
 		else {
 			var change = bpmChangeMap[index];
@@ -551,7 +570,7 @@ final class Conductor
 
 	public static function getBeatsInTime(beatTime:Float, from:Int = 0):Float {
 		var index = getBeatsInChangeIndex(beatTime, from);
-		if (index == -1) return beatTime * (60000 / 100);
+		if (index == -1) return beatTime * (15000 / dummyChange.bpm);
 		else if (index == 0) return beatTime * (15000 / bpmChangeMap[index].bpm) * bpmChangeMap[index].stepsPerBeat;
 		else {
 			var change = bpmChangeMap[index];
