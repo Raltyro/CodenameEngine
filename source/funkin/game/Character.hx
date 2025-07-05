@@ -174,7 +174,7 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 		scripts.call("beatHit", [curBeat]);
 
 		if (Conductor.curBeat != curBeat || (skipNegativeBeats && curBeat < 0)) return;
-		if (danceOnBeat && (curBeat + beatOffset - Conductor.lastBeatChange) % (beatInterval * CoolUtil.minInt(Math.floor(4 / Conductor.stepsPerBeat), 1)) == 0 && !__lockAnimThisFrame)
+		if (danceOnBeat && (curBeat + beatOffset - Conductor.lastBeatChange) % (beatInterval * CoolUtil.maxInt(Math.floor(4 / Conductor.stepsPerBeat), 1)) == 0 && !__lockAnimThisFrame)
 			tryDance();
 	}
 

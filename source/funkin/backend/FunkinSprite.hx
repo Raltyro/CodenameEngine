@@ -142,7 +142,7 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 	public function beatHit(curBeat:Int)
 	{
 		if (Conductor.curBeat != curBeat || (skipNegativeBeats && curBeat < 0)) return;
-		if (beatAnims.length > 0 && (curBeat + beatOffset - Conductor.lastBeatChange) % (beatInterval * CoolUtil.minInt(Math.floor(4 / Conductor.stepsPerBeat), 1)) == 0)
+		if (beatAnims.length > 0 && (curBeat + beatOffset - Conductor.lastBeatChange) % (beatInterval * CoolUtil.maxInt(Math.floor(4 / Conductor.stepsPerBeat), 1)) == 0)
 		{
 			// TODO: find a solution without countedBeat
 			var anim = beatAnims[FlxMath.wrap(countedBeat++, 0, beatAnims.length - 1)];
