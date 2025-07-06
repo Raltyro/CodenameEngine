@@ -125,8 +125,8 @@ final class Conductor
 	 * How much value notes to divide for beat (bottom or divisor number in time signature).
 	 * Only for a convinient way to access divisor instead of multiply by steps per beat.
 	 */
-	public static var denominator(get, never):Int;
-	private static function get_denominator() return Math.floor(16 / stepsPerBeat);
+	public static var denominator(get, never):Float;
+	private static function get_denominator() return FlxMath.roundDecimal(16 / stepsPerBeat, 2);
 
 	/**
 	 * Last step from BPM Change
@@ -190,10 +190,13 @@ final class Conductor
 	 */
 	public static var invalidEvents:Array<ChartEvent> = [];
 
+	private static var validEventNames:Array<String> = ["BPM Change", "Time Signature Change", "Continuous BPM Change"];
+
 	@:dox(hide) public function new() {}
 
 	public static function reset() {
 		songPosition = lastSongPos = curBeatFloat = curStepFloat = curBeat = curStep = 0;
+		curChangeIndex = 0;
 		changeBPM();
 	}
 
@@ -244,19 +247,13 @@ final class Conductor
 		if (song.events == null) return;
 
 		// fix the sort first...
-		var events:Array<ChartEvent> = [];
-		for (e in song.events) if (e.params != null && (e.name == "BPM Change" || e.name == "Time Signature Change" || e.name == "Continuous BPM Change")) events.push(e);
-		events.sort(function(a, b) {
-			if (MathUtil.equal(a.time, b.time)) {
-				if (a.name == "Continuous BPM Change") return 1;
-				if (b.name == "Continuous BPM Change") return -1;
-			}
+		var events:Array<ChartEvent> = [for (e in song.events) if (e.params != null && validEventNames.contains(e.name)) e];
+		events.sort((a, b) -> {
+			if (MathUtil.equal(a.time, b.time)) return a.name == "Continuous BPM Change" ? 1 : -1;
 			return Std.int(a.time - b.time);
 		});
 
-		for (e in events) {
-			curChange = mapEvent(e, curChange);
-		}
+		for (e in events) curChange = mapEvent(e, curChange);
 	}
 
 	private static function mapEvent(e:ChartEvent, curChange:BPMChangeEvent) {
@@ -275,7 +272,9 @@ final class Conductor
 
 			if (curChange.songTime != time) curChange = mapBPMChange(curChange, time, curChange.bpm);
 			curChange.beatsPerMeasure = params[0];
-			curChange.stepsPerBeat = Math.floor(16 / params[1]); // convert from denominator to stepsPerBeat
+
+			if (params[2]) curChange.stepsPerBeat = params[1];
+			else curChange.stepsPerBeat = Math.floor(16 / params[1]); // convert from denominator to stepsPerBeat
 
 			curChange.stepTime = CoolUtil.floorInt(curChange.stepTime + .99998);
 			curChange.beatTime = CoolUtil.floorInt(curChange.beatTime + .99998);
@@ -287,11 +286,11 @@ final class Conductor
 				invalidEvents.push(e);
 				return curChange; //DO NOT!!!!
 			}
+
 			curChange = mapBPMChange(curChange, time, params[0]);
-			var endTime = time + (params[1]) / (curChange.bpm - prevBPM) * Math.log(curChange.bpm / prevBPM) * 15000;
+			curChange.endSongTime = time + (params[1]) / (curChange.bpm - prevBPM) * Math.log(curChange.bpm / prevBPM) * 15000;
 			curChange.endStepTime = curChange.stepTime + params[1];
 			curChange.continuous = true;
-			curChange.endSongTime = endTime;	
 		}
 		return curChange;
 	}
@@ -311,21 +310,15 @@ final class Conductor
 		invalidEvents = [];
 
 		for (event in Charter.instance.eventsGroup.members) {
-			event.events.sort(function(a, b) {
-				if (MathUtil.equal(a.time, b.time)) {
-					if (a.name == "Continuous BPM Change") return 1;
-					if (b.name == "Continuous BPM Change") return -1;
-				}
+			event.events.sort((a, b) -> {
+				if (MathUtil.equal(a.time, b.time)) return a.name == "Continuous BPM Change" ? 1 : -1;
 				return 0;
 			});
 
-			var eventTime = Conductor.getTimeForStep(event.step);
+			var eventTime = Conductor.getStepsInTime(event.step);
 			for (e in event.events) {
-				e.time = eventTime;
-				
-				if ((e.name == "BPM Change" || e.name == "Time Signature Change" || e.name == "Continuous BPM Change")) {
-					curChange = mapEvent(e, curChange);
-				}
+				if (!Math.isNaN(eventTime)) e.time = eventTime;
+				if (validEventNames.contains(e.name)) curChange = mapEvent(e, curChange);
 			}
 		}
 	}
